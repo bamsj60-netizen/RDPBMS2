@@ -1,0 +1,33 @@
+name: Windows-RDP-Bore
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Mengaktifkan RDP & Set Password
+        run: |
+          # Mengaktifkan RDP
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+          
+          # Mengatur password user runneradmin
+          net user runneradmin Password123!
+          Write-Host "RDP Siap di sisi Windows."
+
+      - name: Instalasi Bore (Tunneling)
+        run: |
+          Invoke-WebRequest https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip -OutFile bore.zip
+          Expand-Archive bore.zip -DestinationPath .
+          Write-Host "Bore berhasil diunduh."
+
+      - name: Menjalankan RDP & Tampilkan Alamat
+        shell: powershell
+        run: |
+          Write-Host "Sedang menyambungkan ke tunnel Bore..."
+          Write-Host "LIHAT ALAMAT DI BAWAH INI:"
+          Write-Host "=========================================="
+          # Bore akan berjalan dan menampilkan alamat di log
+          ./bore.exe local 3389 --to bore.pub
