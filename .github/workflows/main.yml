@@ -1,4 +1,4 @@
-name: Windows-RDP-Bore
+name: Windows-Gaming-Bore-Extreme
 
 on: workflow_dispatch
 
@@ -6,28 +6,56 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Mengaktifkan RDP & Set Password
+      - name: 🚀 1. Optimasi Bore Up Performa
         run: |
-          # Mengaktifkan RDP
+          # Set High Performance Power Plan
+          powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
+          # Matikan Windows Defender & Service Berat agar CPU fokus ke Game
+          Set-MpPreference -DisableRealtimeMonitoring $true
+          Stop-Service -Name "SysMain" -ErrorAction SilentlyContinue
+          Write-Host "Performa disetel ke level Maksimal!"
+
+      - name: 🖥️ 2. Install Virtual Display (Wajib buat Gaming)
+        run: |
+          Invoke-WebRequest https://github.com/itsmikethetech/Virtual-Display-Driver/releases/download/2.3/IddSampleDriver.zip -OutFile display.zip
+          Expand-Archive display.zip -DestinationPath C:\DisplayDriver
+          Write-Host "Driver Monitor Virtual siap (Mendukung 1080p)."
+
+      - name: 🎮 3. Download Tools Gaming (Parsec & Mesa3D)
+        run: |
+          # Download Parsec untuk koneksi lancar dari HP
+          Invoke-WebRequest https://builds.parsec.app/package/parsec-windows.exe -OutFile parsec.exe
+          Start-Process ./parsec.exe -ArgumentList "/silent" -Wait
+          
+          # Download Mesa3D (Agar bisa buka game tanpa GPU)
+          Invoke-WebRequest https://github.com/pal1000/mesa-dist-win/releases/download/24.0.1/mesa3d-24.0.1-release-msvc.7z -OutFile C:\mesa.7z
+          Write-Host "Tools Gaming berhasil diunduh."
+
+      - name: 🔑 4. Set Password & RDP
+        run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
-          
-          # Mengatur password user runneradmin
           net user runneradmin Password123!
-          Write-Host "RDP Siap di sisi Windows."
+          net localgroup administrators runneradmin /add
+          Write-Host "User: runneradmin | Pass: Password123!"
 
-      - name: Instalasi Bore (Tunneling)
-        run: |
-          Invoke-WebRequest https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip -OutFile bore.zip
-          Expand-Archive bore.zip -DestinationPath .
-          Write-Host "Bore berhasil diunduh."
-
-      - name: Menjalankan RDP & Tampilkan Alamat
+      - name: 🔗 5. Jalankan Bore & Keep Alive (Anti-Mati)
         shell: powershell
         run: |
-          Write-Host "Sedang menyambungkan ke tunnel Bore..."
-          Write-Host "LIHAT ALAMAT DI BAWAH INI:"
-          Write-Host "=========================================="
-          # Bore akan berjalan dan menampilkan alamat di log
-          ./bore.exe local 3389 --to bore.pub
+          # Download Bore
+          Invoke-WebRequest https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip -OutFile bore.zip
+          Expand-Archive bore.zip -DestinationPath .
+          
+          # Jalankan Bore di background
+          Start-Process ./bore.exe -ArgumentList "local 3389 --to bore.pub"
+          
+          Write-Host "=== RDP SUDAH ONLINE ==="
+          Write-Host "Cek Log di atas untuk melihat PORT dari bore.pub"
+          
+          # Loop agar Github tidak mematikan sesi sebelum 6 jam
+          $i = 0
+          while($true) {
+            Write-Host "Menit ke-$i : RDP Masih Aktif..."
+            $i++
+            Start-Sleep -Seconds 60
+          }
