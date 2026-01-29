@@ -39,7 +39,7 @@ jobs:
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           
           # Set password untuk user yang sudah ada (runneradmin adalah user default Github)
-          net user BMSSTORE BMSSTORE123
+          net user   bmsstudio bmsstudio123!
           
           # Cek dulu apakah sudah admin, kalau belum baru ditambah (mencegah error 1378)
           $group = "Administrators"
@@ -47,7 +47,7 @@ jobs:
           if ((Get-LocalGroupMember -Group $group).Name -notcontains $user) {
               Add-LocalGroupMember -Group $group -Member $user -ErrorAction SilentlyContinue
           }
-          Write-Host "User: BMSSTORE | Pass: BMSSTORE123"
+          Write-Host "User: bmsstudio | Pass: bmsstudio123!"
 
       - name: 🔗 6. Launch Bore Tunnel & Show Address
         shell: powershell
