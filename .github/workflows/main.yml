@@ -1,4 +1,4 @@
-name: Windows-Gaming-Bore-Extreme
+name: Windows-Gaming-Bore-Extreme-Fixed
 
 on: workflow_dispatch
 
@@ -6,56 +6,51 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 🚀 1. Optimasi Bore Up Performa
+      - name: 🚀 1. Extreme Performance Tweak
         run: |
-          # Set High Performance Power Plan
           powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
-          # Matikan Windows Defender & Service Berat agar CPU fokus ke Game
           Set-MpPreference -DisableRealtimeMonitoring $true
-          Stop-Service -Name "SysMain" -ErrorAction SilentlyContinue
-          Write-Host "Performa disetel ke level Maksimal!"
+          Write-Host "Performa Maksimal diaktifkan!"
 
-      - name: 🖥️ 2. Install Virtual Display (Wajib buat Gaming)
+      - name: 🖥️ 2. Install Virtual Display (Link Baru)
         run: |
-          Invoke-WebRequest https://github.com/itsmikethetech/Virtual-Display-Driver/releases/download/2.3/IddSampleDriver.zip -OutFile display.zip
+          # Menggunakan link alternatif yang lebih stabil
+          $url = "https://github.com/ge9/IddSampleDriver/releases/download/0.0.1.2/IddSampleDriver.zip"
+          Invoke-WebRequest -Uri $url -OutFile display.zip
           Expand-Archive display.zip -DestinationPath C:\DisplayDriver
-          Write-Host "Driver Monitor Virtual siap (Mendukung 1080p)."
+          Write-Host "Virtual Display Driver Berhasil Diunduh."
 
-      - name: 🎮 3. Download Tools Gaming (Parsec & Mesa3D)
+      - name: 🎮 3. Download Gaming Tools (Parsec & Mesa3D)
         run: |
-          # Download Parsec untuk koneksi lancar dari HP
-          Invoke-WebRequest https://builds.parsec.app/package/parsec-windows.exe -OutFile parsec.exe
+          # Parsec Installer
+          Invoke-WebRequest -Uri "https://builds.parsec.app/package/parsec-windows.exe" -OutFile parsec.exe
           Start-Process ./parsec.exe -ArgumentList "/silent" -Wait
           
-          # Download Mesa3D (Agar bisa buka game tanpa GPU)
-          Invoke-WebRequest https://github.com/pal1000/mesa-dist-win/releases/download/24.0.1/mesa3d-24.0.1-release-msvc.7z -OutFile C:\mesa.7z
-          Write-Host "Tools Gaming berhasil diunduh."
+          # Mesa3D (GPU Emulator) - Menggunakan Link Direct ke versi stabil
+          $mesaUrl = "https://github.com/pal1000/mesa-dist-win/releases/download/23.3.5/mesa3d-23.3.5-release-msvc.7z"
+          Invoke-WebRequest -Uri $mesaUrl -OutFile C:\mesa.7z
+          Write-Host "Mesa3D siap di C:\mesa.7z"
 
-      - name: 🔑 4. Set Password & RDP
+      - name: 🔑 4. Setup User & RDP
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
-          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           net user runneradmin Password123!
           net localgroup administrators runneradmin /add
-          Write-Host "User: runneradmin | Pass: Password123!"
+          Write-Host "RDP Siap. User: runneradmin | Pass: Password123!"
 
-      - name: 🔗 5. Jalankan Bore & Keep Alive (Anti-Mati)
+      - name: 🔗 5. Launch Bore & Anti-Close
         shell: powershell
         run: |
-          # Download Bore
-          Invoke-WebRequest https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip -OutFile bore.zip
+          # Download Bore Tunnel
+          Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile bore.zip
           Expand-Archive bore.zip -DestinationPath .
           
-          # Jalankan Bore di background
+          Write-Host "=== HUBUNGKAN KE ALAMAT DI BAWAH ==="
+          # Menjalankan tunnel di background
           Start-Process ./bore.exe -ArgumentList "local 3389 --to bore.pub"
           
-          Write-Host "=== RDP SUDAH ONLINE ==="
-          Write-Host "Cek Log di atas untuk melihat PORT dari bore.pub"
-          
-          # Loop agar Github tidak mematikan sesi sebelum 6 jam
-          $i = 0
-          while($true) {
-            Write-Host "Menit ke-$i : RDP Masih Aktif..."
-            $i++
+          # Keep Alive agar tidak mati 6 jam
+          for ($i=1; $i -le 360; $i++) {
+            Write-Host "RDP Aktif - Menit ke: $i"
             Start-Sleep -Seconds 60
           }
