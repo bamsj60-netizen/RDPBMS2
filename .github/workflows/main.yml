@@ -49,17 +49,30 @@ jobs:
           }
           Write-Host "User: runneradmin | Pass: Password123!"
 
-      - name: 🔗 6. Launch Bore Tunnel & Stay Alive
+      - name: 🔗 6. Launch Bore Tunnel & Show Address
         shell: powershell
         run: |
+          # Download Bore Tunnel
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile bore.zip
           Expand-Archive bore.zip -DestinationPath . -Force
           
-          Write-Host "--- MENYAMBUNGKAN KE BORE ---"
-          Start-Process ./bore.exe -ArgumentList "local 3389 --to bore.pub"
+          Write-Host "--- SEDANG MENCARI ALAMAT TUNNEL ---"
           
-          # Loop 6 Jam tanpa henti
+          # Menjalankan Bore dan menyimpan outputnya ke file log sementara
+          Start-Process -FilePath "./bore.exe" -ArgumentList "local 3389 --to bore.pub" -RedirectStandardOutput "bore_log.txt"
+          
+          # Tunggu 5 detik agar Bore selesai negosiasi alamat dengan server
+          Start-Sleep -Seconds 5
+          
+          # Tampilkan isi log agar kamu bisa lihat alamat bore.pub:PORT
+          Get-Content bore_log.txt
+          
+          Write-Host "=========================================="
+          Write-Host "LIHAT ALAMAT DI ATAS (bore.pub:XXXXX)"
+          Write-Host "=========================================="
+          
+          # Loop agar Github tidak mati
           for ($i=1; $i -le 360; $i++) {
-            Write-Host "RDP Aktif - Menit ke-$i"
+            if ($i -eq 5) { Get-Content bore_log.txt } # Tampilkan ulang log tiap beberapa menit buat jaga-jaga
             Start-Sleep -Seconds 60
           }
