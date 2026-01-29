@@ -1,4 +1,4 @@
-name: Windows-Gaming-Bore-Extreme-Fixed
+name: Windows-Gaming-Bore-Super-Final
 
 on: workflow_dispatch
 
@@ -6,51 +6,60 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 🚀 1. Extreme Performance Tweak
+      - name: 🚀 1. Persiapan Performa
         run: |
           powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
           Set-MpPreference -DisableRealtimeMonitoring $true
-          Write-Host "Performa Maksimal diaktifkan!"
+          Write-Host "Sistem Siap!"
 
-      - name: 🖥️ 2. Install Virtual Display (Link Baru)
+      - name: 🖥️ 2. Setup Virtual Display
         run: |
-          # Menggunakan link alternatif yang lebih stabil
           $url = "https://github.com/ge9/IddSampleDriver/releases/download/0.0.1.2/IddSampleDriver.zip"
           Invoke-WebRequest -Uri $url -OutFile display.zip
-          Expand-Archive display.zip -DestinationPath C:\DisplayDriver
-          Write-Host "Virtual Display Driver Berhasil Diunduh."
+          Expand-Archive display.zip -DestinationPath C:\DisplayDriver -Force
+          Write-Host "Driver Display siap di C:\DisplayDriver"
 
-      - name: 🎮 3. Download Gaming Tools (Parsec & Mesa3D)
+      - name: 🎮 3. Setup Mesa3D (GPU Emulator)
         run: |
-          # Parsec Installer
+          Invoke-WebRequest -Uri "https://www.7-zip.org/a/7zr.exe" -OutFile 7zr.exe
+          $mesaUrl = "https://github.com/pal1000/mesa-dist-win/releases/download/23.3.5/mesa3d-23.3.5-release-msvc.7z"
+          Invoke-WebRequest -Uri $mesaUrl -OutFile mesa.7z
+          ./7zr.exe x mesa.7z -oC:\Mesa3D -y
+          Write-Host "Mesa3D siap di C:\Mesa3D"
+
+      - name: 📱 4. Install Parsec
+        run: |
           Invoke-WebRequest -Uri "https://builds.parsec.app/package/parsec-windows.exe" -OutFile parsec.exe
           Start-Process ./parsec.exe -ArgumentList "/silent" -Wait
-          
-          # Mesa3D (GPU Emulator) - Menggunakan Link Direct ke versi stabil
-          $mesaUrl = "https://github.com/pal1000/mesa-dist-win/releases/download/23.3.5/mesa3d-23.3.5-release-msvc.7z"
-          Invoke-WebRequest -Uri $mesaUrl -OutFile C:\mesa.7z
-          Write-Host "Mesa3D siap di C:\mesa.7z"
 
-      - name: 🔑 4. Setup User & RDP
+      - name: 🔑 5. Konfigurasi User RDP (Fix Error 1378)
         run: |
+          # Mengaktifkan RDP
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          
+          # Set password untuk user yang sudah ada (runneradmin adalah user default Github)
           net user runneradmin Password123!
-          net localgroup administrators runneradmin /add
-          Write-Host "RDP Siap. User: runneradmin | Pass: Password123!"
+          
+          # Cek dulu apakah sudah admin, kalau belum baru ditambah (mencegah error 1378)
+          $group = "Administrators"
+          $user = "runneradmin"
+          if ((Get-LocalGroupMember -Group $group).Name -notcontains $user) {
+              Add-LocalGroupMember -Group $group -Member $user -ErrorAction SilentlyContinue
+          }
+          Write-Host "User: runneradmin | Pass: Password123!"
 
-      - name: 🔗 5. Launch Bore & Anti-Close
+      - name: 🔗 6. Launch Bore Tunnel & Stay Alive
         shell: powershell
         run: |
-          # Download Bore Tunnel
           Invoke-WebRequest -Uri "https://github.com/ekzhang/bore/releases/download/v0.5.1/bore-v0.5.1-x86_64-pc-windows-msvc.zip" -OutFile bore.zip
-          Expand-Archive bore.zip -DestinationPath .
+          Expand-Archive bore.zip -DestinationPath . -Force
           
-          Write-Host "=== HUBUNGKAN KE ALAMAT DI BAWAH ==="
-          # Menjalankan tunnel di background
+          Write-Host "--- MENYAMBUNGKAN KE BORE ---"
           Start-Process ./bore.exe -ArgumentList "local 3389 --to bore.pub"
           
-          # Keep Alive agar tidak mati 6 jam
+          # Loop 6 Jam tanpa henti
           for ($i=1; $i -le 360; $i++) {
-            Write-Host "RDP Aktif - Menit ke: $i"
+            Write-Host "RDP Aktif - Menit ke-$i"
             Start-Sleep -Seconds 60
           }
